@@ -1,0 +1,13 @@
+/* Rat Styles */
+* {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	background: grey;
+}
+#ratGame {
+	margin: 40px auto;
+	width: 800px;
+}
