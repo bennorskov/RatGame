@@ -5,6 +5,8 @@ window.onload = function() {
 
 	var groundGroup;
 	var mineGroup;
+	var mineArray = []; 
+	//storing objects in a Phaser group means they come back as a sprite, not the Obj prototype
 
 	var game = new Phaser.Game(
 		800, 600,	 
@@ -21,7 +23,7 @@ window.onload = function() {
 		game.load.spritesheet("mine", "images/mine.png", 32, 32);
 		game.load.image("indicator", "images/indicator.png");
 	}
-
+	// ——————————————— // ——————————————— // ——————————————— // ———————————————  Create
 	function create() {
 		cursors = game.input.keyboard.createCursorKeys();
 
@@ -34,7 +36,8 @@ window.onload = function() {
 
         //setup Mines
         mineGroup = game.add.group();
-        var mine = new Mine(game, 200, 450, "mine", mineGroup);
+        var mine = new Mine(game, 200, 450, "mine", "indicator", mineGroup);
+        mineArray[0] = mine;
 
 		setupPlayer();
 	}
@@ -58,11 +61,17 @@ window.onload = function() {
 		handleKeys();
 
 		detectMines();
+		displayMines();
 	}
 	function detectMines() {
-		if (ratPlayer.x > mineGroup.children[0].x) {
-			mineGroup.children[0].play("on");
+		if (ratPlayer.x > mineArray[0].x) {
+			mineArray[0].setDetectionState(1);
 		}
+	}
+	function displayMines() {
+		for (var i = mineArray.length - 1; i >= 0; i--) {
+			mineArray[i].display();
+		};
 	}
 	function handleKeys() {
 		var xDir = 0;
@@ -81,9 +90,8 @@ window.onload = function() {
 		// up/down speed
 		if (cursors.up.isDown) {
 			ratPlayer.body.velocity.y = -200;
-		} /*else if (cursors.down.isDown) {
-			yDir = 1;
-		}*/
+		} 
+
 		ratPlayer.body.velocity = point( xDir * ratSpeed, ratPlayer.body.velocity.y);
 	}
 	//
@@ -104,29 +112,42 @@ window.onload = function() {
 	//
 	// ——————————————— // ——————————————— // ——————————————— // ——————————————— Definitions: Mine
 	//
-	var Mine = function(game, x, y, key, group) {
+	var Mine = function(game, x, y, key, indicatorKey, group) {
 		if (typeof group === "undefined") { group = game.world; }
 		Phaser.Sprite.call( this, game, x, y, key);
 		this.animations.add("off", [0], 1, true);
 		this.animations.add("on", [1], 1, true);
-		//add(name, frames, frameRate, loop, useNumericIndex) 
+		//Add Animation Func: add(name, frames, frameRate, loop, useNumericIndex) 
 		
+		this.indicator = new IndicatorBase( game, x, y, indicatorKey, group );
+
 		group.add(this);
+
+		this.detectionLevel = 0; // 0 undetected, 1 detected //more states to come?
+
+		this.setDetectionState = function( _state ) {
+			//when the mine is detected, the level of detection is set here
+			detectionLevel = _state;
+			this.animations.play("on");
+		}
 	}
 	Mine.prototype = Object.create(Phaser.Sprite.prototype);
 	Mine.prototype.constructor = Mine;
+	Mine.prototype.display = function() {
+	}
+
 	//
-	// ——————————————— // ——————————————— // ——————————————— // ——————————————— Definitions: Mine
-	//
+	// ——————————————— // ——————————————— // ——————————————— // ——————————————— Definitions: Indicator
+	//	Indicator is the drawn-on indicator for detection space the mine will have due to sniffing
+	//	it will associate with a mine, and be drawn through the mine's draw loop
 	var IndicatorBase = function (game, x, y, key, group) {
 		if (typeof group === "undefined") { group = game.world; }
 		Phaser.Sprite.call( this, game, x, y, key);
 		group.add(this);
 
-		this.mine = null;
 	}
-	IndicatorBase = Object.create( Phaser.Sprite.prototype );
-	IndicatorBase.constructor = IndicatorBase;
+	IndicatorBase.prototype = Object.create( Phaser.Sprite.prototype );
+	IndicatorBase.prototype.constructor = IndicatorBase;
 }
 
 
